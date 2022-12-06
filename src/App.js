@@ -569,21 +569,15 @@ function App() {
 
   useEffect(()=>{
     if (connected) {
-      let components = identityComponents.map(component=>{
-        return <IdentityComponent component_type={component.type} component_content={component.content} key={component.type}/>
+      let components = identityComponents.map( (component, index)=>{
+        return <IdentityComponent component_type={component.type} component_content={component.content} key={index}/>
       })
     setIdentityInterface(components)
     }
   }, [connected])
 
   async function connect(){
-    // {'type' :'accounts', 'content' : []}
-    // let list = [
-    //   {
-    //     'type' : 'address',
-    //     'content' : '0x68b3c4c90AD57B48479F1358DeB3949A61F58a94'
-    //   }
-    // ]
+
 
     const accounts = await provider.send('eth_requestAccounts', []);
     identityComponents.push({'type': 'account', 'content': accounts});
@@ -591,11 +585,19 @@ function App() {
 
 	const filter = erc1056.filters.DIDOwnerChanged(null,accounts[0])
 
+	const identities = []
 
 
-	const changedOwnerships = await erc1056.queryFilter(filter,36309718, provider.getBlockNumber())
-	const identities = changedOwnerships.map( ownership => ownership.args.identity.toLowerCase())
-  	
+	const lastBlock = await provider.getBlockNumber()
+
+	for(let i = 36317792; i < lastBlock; i+=10000){
+		console.log(i)
+		console.log(i+10000)
+
+		const changedOwnerships = await erc1056.queryFilter(filter,	i, i+10000)
+		changedOwnerships.forEach( ownership => identities.push(ownership.args.identity.toLowerCase()))
+		
+	}
 
 	identities.forEach(identity =>
 		identityComponents.push({'type': 'identity', 'content': identity})
